@@ -1,20 +1,15 @@
 import dayjs from "dayjs";
 import connection from "../database/db.connection.js";
-import customParseFormat from 'dayjs/plugin/customParseFormat.js';
-import utc from "dayjs/plugin/utc.js";
 
-dayjs.extend(customParseFormat);
-dayjs.extend(utc);
-const date = dayjs().utcOffset(0).format("YYYY-MM-DD");
+const date = dayjs().format("YYYY-MM-DD");
 
 export async function getRentals(req, res) {
   try {
     const rentals = await connection.query("SELECT * FROM rentals;");
     rentals.rows = rentals.rows.map((rent) => ({
       ...rent,
-      rentDate: new Date(rent.rentDate).toISOString().split('T')[0]
-    }))
-    console.log(rentals.rows)
+      rentDate: new Date(rent.rentDate).toISOString().split("T")[0],
+    }));
     // const editedRentals = {
     //   ...rentals.rows,
     //   customer: rentals.rows.map((rent, i) => {
@@ -36,21 +31,22 @@ export async function createRent(req, res) {
   try {
     const customer = await connection.query(
       "SELECT * FROM customers WHERE customers.id = $1;",
-      [customerId]
+      [customerId],
     );
     if (!customer.rows[0]) return res.status(400).send("Cliente não existe");
 
     const game = await connection.query(
       "SELECT * FROM games WHERE games.id = $1;",
-      [gameId]
+      [gameId],
     );
     if (!game.rows[0]) return res.status(400).send("Jogo não existe");
 
     const { stockTotal, pricePerDay } = game.rows[0];
 
     const rentedGames = await connection.query(
-      `SELECT * FROM rentals WHERE "gameId" = $1 AND "returnDate" IS NULL;`,
-      [gameId]
+      `"SELECT * FROM rentals
+        WHERE "gameId" = $1 AND "returnDate" IS NULL;"`,
+      [gameId],
     );
     if (rentedGames.rows >= stockTotal) return res.status(400).send("Jogo não está em estoque");
 
@@ -64,8 +60,9 @@ export async function createRent(req, res) {
 
     const newStock = stockTotal - 1;
     await connection.query(
-      `UPDATE games SET "stockTotal" = $1 WHERE id = $2 ;`,
-      [newStock, gameId]
+      `"UPDATE games SET "stockTotal" = $1
+        WHERE id = $2";`,
+      [newStock, gameId],
     );
 
     res.status(201).send("Aluguel criado com sucesso");
@@ -81,7 +78,7 @@ export async function finalizeRent(req, res) {
   try {
     const rental = await connection.query(
       "SELECT * FROM rentals WHERE rentals.id = $1;",
-      [id]
+      [id],
     );
     if (!rental.rows[0]) return res.status(404).send("Aluguel não existe");
     if (rental.rows[0].returnDate !== null) return res.status(400).send("Aluguel já foi finalizado");
@@ -89,7 +86,7 @@ export async function finalizeRent(req, res) {
 
     const game = await connection.query(
       "SELECT * FROM games WHERE games.id = $1;",
-      [rental.rows[0].gameId]
+      [rental.rows[0].gameId],
     );
     const { pricePerDay, stockTotal } = game.rows[0];
 
@@ -100,14 +97,16 @@ export async function finalizeRent(req, res) {
     const delayFee = delayDays > 0 ? (delayDays * pricePerDay) * 100 : 0;
 
     await connection.query(
-      `UPDATE rentals SET "returnDate" = $1, "delayFee" = $2 WHERE id = $3;`,
-      [date, delayFee, id]
+      `"UPDATE" rentals SET "returnDate" = $1, "delayFee" = $2
+        WHERE id = $3;"`,
+      [date, delayFee, id],
     );
 
     const newStock = stockTotal + 1;
     await connection.query(
-      `UPDATE games SET "stockTotal" = $1 WHERE id = $2 ;`,
-      [newStock, game.rows[0].id]
+      `"UPDATE games SET "stockTotal" = $1
+        WHERE id = $2;"`,
+      [newStock, game.rows[0].id],
     );
 
     res.send("Aluguel finalizado com sucesso");
@@ -121,11 +120,17 @@ export async function deleteRent(req, res) {
   if (!id) return res.sendStatus(404);
 
   try {
-    const rental = await connection.query("SELECT * FROM rentals WHERE rentals.id = $1;", [id]);
+    const rental = await connection.query(
+      "SELECT * FROM rentals WHERE rentals.id = $1;",
+      [id],
+    );
     if (!rental.rows[0]) return res.status(404).send("Aluguel não existe");
     if (rental.rows[0].returnDate === null) return res.status(400).send("Aluguel não foi finalizado, verifique se o jogo foi devolvido");
 
-    await connection.query("DELETE FROM rentals WHERE rentals.id = $1;", [Number(id)],);
+    await connection.query(
+      "DELETE FROM rentals WHERE rentals.id = $1;",
+      [id],
+    );
 
     res.send("Aluguel deletado");
   } catch (err) {
