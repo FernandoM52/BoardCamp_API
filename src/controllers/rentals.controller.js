@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import connection from "../database/db.connection.js";
+import { connection } from "../database/db.connection.js";
 
 const date = dayjs().format("YYYY-MM-DD");
 

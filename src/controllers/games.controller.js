@@ -1,4 +1,4 @@
-import connection from "../database/db.connection.js";
+import { connection } from "../database/db.connection.js";
 
 export async function getGames(req, res) {
   try {
