@@ -96,7 +96,7 @@ export async function finalizeRent(req, res) {
     const delayFee = delayDays > 0 ? delayDays * pricePerDay : 0;
 
     await connection.query(
-      `UPDATE" rentals SET "returnDate" = $1, "delayFee" = $2
+      `UPDATE rentals SET "returnDate" = $1, "delayFee" = $2
         WHERE id = $3;`,
       [date, delayFee, id],
     );
