@@ -5,19 +5,27 @@ const date = dayjs().format("YYYY-MM-DD");
 
 export async function getRentals(req, res) {
   try {
-    const rentals = await connection.query("SELECT * FROM rentals;");
+    // const rentals = await connection.query("SELECT * FROM rentals;");
+    // rentals.rows = rentals.rows.map((rent) => ({
+    //   ...rent,
+    //   rentDate: new Date(rent.rentDate).toISOString().split("T")[0],
+    //   returnDate: rent.returnDate === null ? null : new Date(rent.returnDate).toISOString().split("T")[0],
+    // }));
+    const rentals = await connection.query(
+      `SELECT rentals.*, customers.id, customers.name AS "customerName", games.id, games.name as "gameName"
+        FROM rentals
+        JOIN customers ON customers.id = rentals."customerId"
+        JOIN games ON games.id = rentals."gameId"`
+    );
+
     rentals.rows = rentals.rows.map((rent) => ({
       ...rent,
       rentDate: new Date(rent.rentDate).toISOString().split("T")[0],
       returnDate: rent.returnDate === null ? null : new Date(rent.returnDate).toISOString().split("T")[0],
+      customer: { id: rent.customerId, name: rent.customerName },
+      game: { id: rent.gameId, name: rent.gameName }
     }));
-    // const editedRentals = {
-    //   ...rentals.rows,
-    //   customer: rentals.rows.map((rent, i) => {
-    //       id: rent.rows[i].customerId,
-    //   }),
-    //   game:
-    // }
+
     res.send(rentals.rows);
   } catch (err) {
     res.status(500).send(err.message);
@@ -59,13 +67,6 @@ export async function createRent(req, res) {
         VALUES($1, $2, $3, $4, $5, $6, $7);`,
       [customerId, gameId, date, daysRented, null, originalPrice, null],
     );
-
-    // const newStock = stockTotal - 1;
-    // await connection.query(
-    //   `"UPDATE games SET "stockTotal" = $1
-    //     WHERE id = $2";`,
-    //   [newStock, gameId],
-    // );
 
     res.status(201).send("Aluguel criado com sucesso");
   } catch (err) {
