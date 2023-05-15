@@ -21,9 +21,9 @@ export async function getCustomerById(req, res) {
     const customer = await connection.query("SELECT * FROM customers WHERE id = $1;", [id]);
     if (!customer.rows[0]) return res.status(404).send("Cliente não existe");
 
-    customer.rows[0] = customer.rows[0].map((customer) => ({
-      ...customer,
-      birthday: new Date(customer.birthday).toISOString().split("T")[0],
+    customer.rows[0] = customer.rows[0].map((c) => ({
+      ...c,
+      birthday: new Date(c.birthday).toISOString().split("T")[0],
     }));
 
     res.send(customer.rows[0]);
@@ -64,7 +64,7 @@ export async function updateCustomer(req, res) {
       "SELECT * FROM customers WHERE cpf = $1 AND id != $2;",
       [cpf, id],
     );
-    if (customer.rows[0]) return res.status(404).send("CPF já está em uso");
+    if (customer.rows[0]) return res.status(409).send("CPF já está em uso");
 
     await connection.query(
       `UPDATE customers SET name = $1, phone = $2, cpf = $3, birthday = $4
