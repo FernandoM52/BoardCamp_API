@@ -9,6 +9,7 @@ export async function getRentals(req, res) {
     rentals.rows = rentals.rows.map((rent) => ({
       ...rent,
       rentDate: new Date(rent.rentDate).toISOString().split("T")[0],
+      returnDate: new Date(rent.returnDate).toISOString().split("T")[0],
     }));
     // const editedRentals = {
     //   ...rentals.rows,
@@ -76,37 +77,27 @@ export async function finalizeRent(req, res) {
 
   try {
     const rental = await connection.query(
-      "SELECT * FROM rentals WHERE rentals.id = $1;",
+      `SELECT rentals.*, games."pricePerDay" AS "pricePerDay
+        FROM rentals
+        JOIN games ON games.id = rentals."gameId"
+        WHERE rentals.id = $1;`,
       [id],
     );
     if (!rental.rows[0]) return res.status(404).send("Aluguel não existe");
     if (rental.rows[0].returnDate !== null) return res.status(400).send("Aluguel já foi finalizado");
-    const { daysRented, rentDate, returnDate } = rental.rows[0];
 
-    const game = await connection.query(
-      "SELECT * FROM games WHERE games.id = $1;",
-      [rental.rows[0].gameId],
-    );
-    const { pricePerDay, stockTotal } = game.rows[0];
+    const { daysRented, rentDate, pricePerDay } = rental.rows[0];
+    const rentDateObj = dayjs(rentDate);
+    const returnDateObj = dayjs();
 
-    const expectedReturnDate = dayjs(rentDate).add(daysRented, "day");
-    const actualReturnDate = dayjs(returnDate);
-    const delayDays = actualReturnDate.diff(expectedReturnDate, "day");
-
-    const delayFee = delayDays > 0 ? delayDays * pricePerDay : 0;
+    const daysDelayed = returnDateObj.diff(rentDateObj, "day") - daysRented;
+    const delayFee = Math.max(0, daysDelayed) * pricePerDay
 
     await connection.query(
       `UPDATE rentals SET "returnDate" = $1, "delayFee" = $2
         WHERE id = $3;`,
-      [date, delayFee, id],
+      [returnDateObj.format("YYYY-MM-DD"), delayFee, id],
     );
-
-    // const newStock = stockTotal + 1;
-    // await connection.query(
-    //   `"UPDATE games SET "stockTotal" = $1
-    //     WHERE id = $2;"`,
-    //   [newStock, game.rows[0].id],
-    // );
 
     res.send("Aluguel finalizado com sucesso");
   } catch (err) {
