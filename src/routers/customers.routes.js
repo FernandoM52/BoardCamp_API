@@ -2,7 +2,7 @@ import { Router } from "express";
 import { validateSchema } from "../middlewares/validadeSchema.middleware.js";
 import { customerSchema } from "../schemas/customer.schema.js";
 import {
-  createCustomer, getCustomerById, getCustomers, updateUser,
+  createCustomer, getCustomers, getCustomerById, updateUser,
 } from "../controllers/customers.controller.js";
 
 const customersRouter = Router();
