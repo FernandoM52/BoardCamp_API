@@ -21,6 +21,11 @@ export async function getCustomerById(req, res) {
     const customer = await connection.query("SELECT * FROM customers WHERE id = $1;", [id]);
     if (!customer.rows[0]) return res.status(404).send("Cliente não existe");
 
+    customer.rows[0] = customer.rows[0].map((customer) => ({
+      ...customer,
+      birthday: new Date(customer.birthday).toISOString().split("T")[0],
+    }));
+
     res.send(customer.rows[0]);
   } catch (err) {
     res.status(500).send(err.message);
@@ -48,16 +53,18 @@ export async function createCustomer(req, res) {
   }
 }
 
-export async function updateUser(req, res) {
+export async function updateCustomer(req, res) {
   const { id } = req.params;
   const {
     name, phone, cpf, birthday,
   } = req.body;
 
   try {
-    const customer = await connection.query("SELECT * FROM customers WHERE id = $1;", [id]);
-    if (!customer.rows[0]) return res.status(404).send("Cliente não existe");
-    if (customer.rows[0].cpf === cpf && customer.rows[0].id !== id) return res.status(400).send("CPF já em uso")
+    const customer = await connection.query(
+      "SELECT * FROM customers WHERE cpf = $1 AND id != $2;",
+      [cpf, id],
+    );
+    if (customer.rows[0]) return res.status(404).send("CPF já está em uso");
 
     await connection.query(
       `UPDATE customers SET name = $1, phone = $2, cpf = $3, birthday = $4
