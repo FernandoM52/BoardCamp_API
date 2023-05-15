@@ -5,17 +5,11 @@ const date = dayjs().format("YYYY-MM-DD");
 
 export async function getRentals(req, res) {
   try {
-    // const rentals = await connection.query("SELECT * FROM rentals;");
-    // rentals.rows = rentals.rows.map((rent) => ({
-    //   ...rent,
-    //   rentDate: new Date(rent.rentDate).toISOString().split("T")[0],
-    //   returnDate: rent.returnDate === null ? null : new Date(rent.returnDate).toISOString().split("T")[0],
-    // }));
     const rentals = await connection.query(
       `SELECT rentals.*, customers.id, customers.name AS "customerName", games.id, games.name as "gameName"
         FROM rentals
         JOIN customers ON customers.id = rentals."customerId"
-        JOIN games ON games.id = rentals."gameId"`
+        JOIN games ON games.id = rentals."gameId";`
     );
 
     rentals.rows = rentals.rows.map((rent) => ({
@@ -23,7 +17,7 @@ export async function getRentals(req, res) {
       rentDate: new Date(rent.rentDate).toISOString().split("T")[0],
       returnDate: rent.returnDate === null ? null : new Date(rent.returnDate).toISOString().split("T")[0],
       customer: { id: rent.customerId, name: rent.customerName },
-      game: { id: rent.gameId, name: rent.gameName }
+      game: { id: rent.gameId, name: rent.gameName },
     }));
 
     res.send(rentals.rows);
@@ -93,7 +87,7 @@ export async function finalizeRent(req, res) {
     const returnDateObj = dayjs();
 
     const daysDelayed = returnDateObj.diff(rentDateObj, "day") - daysRented;
-    const delayFee = Math.max(0, daysDelayed) * pricePerDay
+    const delayFee = Math.max(0, daysDelayed) * pricePerDay;
 
     await connection.query(
       `UPDATE rentals SET "returnDate" = $1, "delayFee" = $2

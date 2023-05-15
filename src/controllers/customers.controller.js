@@ -6,7 +6,7 @@ export async function getCustomers(req, res) {
     customers.rows = customers.rows.map((customer) => ({
       ...customer,
       birthday: new Date(customer.birthday).toISOString().split("T")[0],
-    }))
+    }));
 
     res.send(customers.rows);
   } catch (err) {
