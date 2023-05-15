@@ -62,7 +62,7 @@ export async function finalizeRent(req, res) {
   if (!id) return res.sendStatus(404);
 
   try {
-    const rental = await connection.query("SELECT * FROM customers WHERE rentals.id = $1;", [id]);
+    const rental = await connection.query("SELECT * FROM rentals WHERE rentals.id = $1;", [id]);
     if (!rental.rows[0]) return res.status(404).send("Aluguel não existe");
     if (rental.rows[0].returnDate !== null) return res.status(400).send("Aluguel já foi finalizado");
     const { daysRented, rentDate, returnDate } = rental.rows[0];
@@ -76,7 +76,7 @@ export async function finalizeRent(req, res) {
 
     const delayFee = delayDays > 0 ? (delayDays * pricePerDay) * 100 : 0;
 
-    await connection.query("UPDATE rentals SET returnDate = $1, delayFee = $2 WHERE id = $3;", [date, delayFee, id]);
+    await connection.query(`UPDATE rentals SET "returnDate" = $1, "delayFee" = $2 WHERE id = $3;`, [date, delayFee, id]);
 
     res.send("Aluguel finalizado com sucesso");
   } catch (err) {
@@ -89,7 +89,7 @@ export async function deleteRent(req, res) {
   if (!id) return res.sendStatus(404);
 
   try {
-    const rental = await connection.query("SELECT * FROM customers WHERE rentals.id = $1;", [id]);
+    const rental = await connection.query("SELECT * FROM rentals WHERE rentals.id = $1;", [id]);
     if (!rental.rows[0]) return res.status(404).send("Aluguel não existe");
     if (rental.rows[0].returnDate === null) return res.status(400).send("Aluguel não foi finalizado, verifique se o jogo foi devolvido");
 
