@@ -49,7 +49,8 @@ export async function createRent(req, res) {
         WHERE "gameId" = $1 AND "returnDate" IS NULL;`,
       [gameId],
     );
-    if (rentedGames.rows >= stockTotal) return res.status(400).send("Jogo não está em estoque");
+    if (rentedGames.rowCount >= stockTotal) return res.status(400).send("Jogo não está em estoque");
+    console.log(rentedGames.rows);
 
     const originalPrice = (Number(pricePerDay) * Number(daysRented));
 
