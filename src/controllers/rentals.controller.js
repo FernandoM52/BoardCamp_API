@@ -9,7 +9,7 @@ export async function getRentals(req, res) {
     rentals.rows = rentals.rows.map((rent) => ({
       ...rent,
       rentDate: new Date(rent.rentDate).toISOString().split("T")[0],
-      returnDate: new Date(rent.returnDate).toISOString().split("T")[0],
+      returnDate: rent.returnDate === null ? null : new Date(rent.returnDate).toISOString().split("T")[0],
     }));
     // const editedRentals = {
     //   ...rentals.rows,
@@ -77,7 +77,7 @@ export async function finalizeRent(req, res) {
 
   try {
     const rental = await connection.query(
-      `SELECT rentals.*, games."pricePerDay" AS "pricePerDay
+      `SELECT rentals.*, games."pricePerDay" AS "pricePerDay"
         FROM rentals
         JOIN games ON games.id = rentals."gameId"
         WHERE rentals.id = $1;`,
