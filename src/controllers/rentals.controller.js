@@ -44,8 +44,8 @@ export async function createRent(req, res) {
     const { stockTotal, pricePerDay } = game.rows[0];
 
     const rentedGames = await connection.query(
-      `"SELECT * FROM rentals
-        WHERE "gameId" = $1 AND "returnDate" IS NULL;"`,
+      `SELECT * FROM rentals
+        WHERE "gameId" = $1 AND "returnDate" IS NULL;`,
       [gameId],
     );
     if (rentedGames.rows >= stockTotal) return res.status(400).send("Jogo não está em estoque");
@@ -58,12 +58,12 @@ export async function createRent(req, res) {
       [customerId, gameId, date, daysRented, null, originalPrice, null],
     );
 
-    const newStock = stockTotal - 1;
-    await connection.query(
-      `"UPDATE games SET "stockTotal" = $1
-        WHERE id = $2";`,
-      [newStock, gameId],
-    );
+    // const newStock = stockTotal - 1;
+    // await connection.query(
+    //   `"UPDATE games SET "stockTotal" = $1
+    //     WHERE id = $2";`,
+    //   [newStock, gameId],
+    // );
 
     res.status(201).send("Aluguel criado com sucesso");
   } catch (err) {
@@ -73,7 +73,6 @@ export async function createRent(req, res) {
 
 export async function finalizeRent(req, res) {
   const { id } = req.params;
-  if (!id) return res.sendStatus(404);
 
   try {
     const rental = await connection.query(
@@ -94,20 +93,20 @@ export async function finalizeRent(req, res) {
     const actualReturnDate = dayjs(returnDate);
     const delayDays = actualReturnDate.diff(expectedReturnDate, "day");
 
-    const delayFee = delayDays > 0 ? (delayDays * pricePerDay) * 100 : 0;
+    const delayFee = delayDays > 0 ? delayDays * pricePerDay : 0;
 
     await connection.query(
-      `"UPDATE" rentals SET "returnDate" = $1, "delayFee" = $2
-        WHERE id = $3;"`,
+      `UPDATE" rentals SET "returnDate" = $1, "delayFee" = $2
+        WHERE id = $3;`,
       [date, delayFee, id],
     );
 
-    const newStock = stockTotal + 1;
-    await connection.query(
-      `"UPDATE games SET "stockTotal" = $1
-        WHERE id = $2;"`,
-      [newStock, game.rows[0].id],
-    );
+    // const newStock = stockTotal + 1;
+    // await connection.query(
+    //   `"UPDATE games SET "stockTotal" = $1
+    //     WHERE id = $2;"`,
+    //   [newStock, game.rows[0].id],
+    // );
 
     res.send("Aluguel finalizado com sucesso");
   } catch (err) {
